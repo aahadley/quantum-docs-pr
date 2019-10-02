@@ -23,7 +23,7 @@ Applications developed with Microsoft's Quantum Development Kit typically consis
   that serves as the main entry point and will invoke Q# operations 
   when it wants to execute a quantum algorithm.
 
-This guide will walk you through how to create applications using Q#, and using C# as the classical component in Visual Studio or Visual Studio Code.
+This guide will walk you through how to create applications using Q#, and using C# or Python as the classical component in Visual Studio or Visual Studio Code.
 
 ## Creating a Bell State in Q#
 
@@ -66,7 +66,7 @@ Our goal is to create a [Bell State](https://en.wikipedia.org/wiki/Bell_state) s
 
 #### Source files for a quantum application
 Your development environment should have two files open:
-`Driver.cs`, which will hold the C# driver for your quantum code,
+`Driver.cs` or `Driver.py`, which will hold the classical driver for your quantum code,
 and `Operations.qs`, which will hold the quantum code itself.
 
 #### Q# source
@@ -230,8 +230,9 @@ to its argument qubit.
 > Q# uses tuples as a way to pass multiple values, rather than using
 > structures or records.
 
-### Step 3: Enter the C# Driver Code
+### Step 3: Enter the Classical Driver Code
 
+#### [C#](#tab/tabid-csharp)
 Switch to the `Driver.cs` file in your development environment.
 This file should have the following contents:
 
@@ -256,8 +257,21 @@ namespace Quantum.Bell
 }
 ```
 
-#### Run quantum operations from a C# host program
+#### [Python](#tab/tabid-python)
+Switch to the `Driver.`py file in your development environment.
+This file should have the following contents:
+
+```Python
+import qsharp
+from HelloWorld import SayHello
+
+SayHello.simulate()
+```
+
+#### Run quantum operations from a Classiical host program
 Replace the body of the `Main` method with the following code:
+
+#### [C#](#tab/tabid-csharp)
 
 ```csharp
             using (var qsim = new QuantumSimulator())
@@ -299,6 +313,24 @@ Replace the body of the `Main` method with the following code:
 >   We deconstruct the tuple to get the two fields, print the results,
 >   and wait for a keypress.
 
+#### [Python](#tab/tabid-python)
+Replace `SayHello.simulate()` with the following code:
+
+```Python
+import qsharp
+from Quantum.Bell import BellTest
+
+initials = ( qsharp.Result.Zero, qsharp.Result.One )
+
+for initial in initials:
+    res = BellTest.simulate(count=1000, initial=initial)
+    numZeros, numOnes = res
+
+    print("Init:"+str(initial.name) + "\t0s="+str(numZeros) + "\t1s="+str(numOnes))
+
+input("Press any key to continue...")
+```
+
 ### Step 4: Build and Run
 
 #### [Command Line / Visual Studio Code](#tab/tabid-vscode)
@@ -321,6 +353,14 @@ Just hit `F5`, and your program should build and run!
 
 ***
 
+The program will exit after you press a key.
+
+#### [Python](#tab/tabid-python)
+Run the following command at your terminal. You may need to replace `python3` with `python` depending on your configuration.
+
+```bash
+python3 driver.py
+```
 
 The results should be:
 
@@ -329,8 +369,6 @@ Init:Zero 0s=1000 1s=0
 Init:One  0s=0    1s=1000
 Press any key to continue...
 ```
-
-The program will exit after you press a key.
 
 ### Step 5: Creating Superposition
 
@@ -462,6 +500,7 @@ If we run this, we'll get exactly the same 50-50 result we got before. However, 
 
 There is now a new return value (`agree`) that will keep track of every time the measurement from the first qubit matches the measurement of the second qubit. Of course, we also have to update the __Driver.cs__ file accordingly:
 
+#### [C#](#tab/tabid-csharp)
 ```csharp
             using (var qsim = new QuantumSimulator())
             {
@@ -479,6 +518,22 @@ There is now a new return value (`agree`) that will keep track of every time the
             System.Console.WriteLine("Press any key to continue...");
             Console.ReadKey();
 ```
+
+#### [Python](#tab/tabid-python)
+```Python
+import qsharp
+from Quantum.Bell import BellTest
+
+initials = ( qsharp.Result.Zero, qsharp.Result.One )
+
+for initial in initials:
+    res = BellTest.simulate(count=1000, initial=initial)
+    numZeros, numOnes, agree = res
+    
+    print("Init:"+str(initial.name) + "\t0s="+str(numZeros) + "\t1s="+str(numOnes) + "\tagree="+str(agree))
+
+input("Press any key to continue...")
+```
 Now when we run, we get something pretty amazing:
 
 ```Output
@@ -494,6 +549,7 @@ Our statistics for the first qubit haven't changed (50-50 chance of a 0 or a 1),
 Sometimes the quantum program is impossible to simulate on a classical computer (for example, if it uses too many qubits). In this case the researchers need to get an estimate of how many resources (qubits or certain gates) the program will use on a quantum computer as it would be impossible to simulate the program on a classical computer. We can do this without changing the Q# operation but using a different target machine, a  `ResourcesEstimator`, for executing it in the C# host code; 
 for example, modify the code in the the __Driver.cs__ file to be:
 
+#### [C#](#tab/tabid-csharp)
 ```csharp
             var estimator = new ResourcesEstimator();
             BellTest.Run(estimator, 1000, Result.Zero).Wait();
@@ -504,10 +560,27 @@ for example, modify the code in the the __Driver.cs__ file to be:
             Console.ReadKey();
 ```
 
+#### [Python](#tab/tabid-python)
+```Python
+import qsharp
+from Quantum.Bell import BellTest
+
+initials = ( qsharp.Result.Zero, qsharp.Result.One )
+
+for initial in initials:
+    res = BellTest.estimate_resources(count=1000, initial=initial)
+
+    print(res)
+
+input("Press any key to continue...")
+
+```
+
 This change indicates to run the `BellTest` operation using the `estimator` as the target machine. When completed,
 we output the results to the console in TSV (tab-seperated values) format using the `ResourcesEstimator`'s `ToTSV()` method.
 The output of the program is:
 
+#### [C#](#tab/tabid-csharp)
 ```Output
 Metric          Sum
 CNOT            1000
@@ -518,6 +591,12 @@ T               0
 Depth           0
 Width           2
 BorrowedWidth   0
+```
+
+#### [Python](#tab/tabid-python)
+```Output
+{'CNOT': 1000, 'QubitClifford': 1000, 'R': 0, 'Measure': 4002, 'T': 0, 'Depth': 0, 'Width': 2, 'BorrowedWidth': 0}
+{'CNOT': 1000, 'QubitClifford': 2000, 'R': 0, 'Measure': 4002, 'T': 0, 'Depth': 0, 'Width': 2, 'BorrowedWidth': 0}
 ```
 
 For more information about the metrics reported and accessing the data programmatically,
